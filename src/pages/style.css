@@ -1,0 +1,293 @@
+.centered {
+  display: flex;
+  /* justify-content: center; */
+  /* align-items: center; */
+  flex-direction: column;
+  align-items: center;
+  color: #eeeeee;
+  font-family: "b612", sans-serif;
+}
+
+.white-text {
+  color: #eeeeee;
+}
+.logoText {
+  color: #eeeeee;
+}
+
+.messageInput {
+  color: #04a902;
+  background-color: black;
+  outline-width: 0;
+  font-size: 18px;
+}
+
+.fixedWidth {
+  box-sizing: padding-box;
+  -moz-box-sizing: padding-box;
+  -webkit-box-sizing: padding-box;
+  padding-bottom: 60px;
+}
+
+#wide {
+  flex: 2;
+  /* box-sizing: padding-box; */
+  /* Grow to rest of container */
+  background: #333333;
+  overflow: scroll;
+  /* height: 100vh; */
+}
+
+.message-text {
+  width: 90%;
+  height: 100%;
+  text-align: left;
+  margin-left: 5%;
+  background: #333333;
+}
+
+.noteSection {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  width: 20em;
+  height: 160px;
+  background: #222831;
+  border-radius: 2px;
+  left: 20px;
+  top: 10px;
+  border: 0.1em solid #5b5e64;
+  cursor: pointer;
+}
+
+.messageBox {
+  display: flex;
+  flex-direction: column;
+  color: #eeeeee;
+  font-family: "b612", sans-serif;
+  flex-wrap: wrap;
+}
+.focusedNote {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  width: 20em;
+  height: 160px;
+  background: #016e8fb6;
+  border-radius: 2px;
+  left: 20px;
+  top: 10px;
+  margin-top: 10px;
+  margin-left: 100px;
+  border: 0.1em solid #5b5e64;
+}
+
+.noteSection:hover {
+  background-color: #205081;
+}
+
+.sticky-nav {
+  position: sticky;
+  top: 0;
+}
+
+#parent {
+  display: flex;
+  height: 50em;
+  border-top: 1px solid #eeeeee9f;
+
+  /* overflow: hidden; */
+}
+.narrow {
+  width: auto;
+  height: 100vh;
+  background: #191b1f;
+
+  /* border-top: 2px solid #04A902;
+  border-right: 3px solid #04A902; */
+  /* Just so it's visible */
+  border-right: 1px solid #eeeeee9f;
+  box-sizing: padding-box;
+  -moz-box-sizing: padding-box;
+  -webkit-box-sizing: padding-box;
+  padding-bottom: 60px;
+}
+
+.notes-list {
+  height: 80%;
+  overflow-y: scroll;
+}
+
+.notes-list-adjusted {
+  height: 70.5%;
+  overflow-y: scroll;
+}
+
+.account-dropdown {
+  height: 300px;
+  overflow-y: scroll;
+}
+
+.note-divider {
+  border: 0;
+  clear: both;
+  display: block;
+  width: 100%;
+  background-color: #eeeeee9f;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+#line {
+  float: left;
+  width: 731px;
+  height: 40px;
+}
+
+div.settings {
+  display: grid;
+  grid-template-columns: max-content max-content;
+  grid-gap: 5px;
+}
+div.settings label {
+  text-align: right;
+}
+
+li {
+  list-style-type: none;
+  align-self: center;
+}
+
+.accountListContainer {
+  display: flex;
+  justify-content: center;
+  flex-direction: row;
+}
+
+.header-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: left;
+}
+
+.subject-info-container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  margin-left: 2%;
+  margin-top: 1%;
+}
+
+.sender-info-container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  margin-top: 1%;
+  margin-left: 2%;
+}
+
+.timestamp-info-container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  margin-left: 2%;
+  margin-top: 1%;
+  margin-bottom: 1%;
+}
+
+.message-actions {
+  flex: 50%;
+  text-align: right;
+  margin-top: 1%;
+  margin-left: 1.3%;
+}
+
+.message-actions-below {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  margin-top: 2.5%;
+  padding-bottom: 2.5%;
+  justify-content: flex-start;
+}
+
+.message-body {
+  font-size: 1.08em;
+  white-space: pre-line;
+}
+.bold-text {
+  font-weight: bold;
+}
+
+div.toLabel {
+  display: inline-block;
+  /*ie7 -- start*/
+  *display: inline;
+  zoom: 1;
+}
+
+scroll-flow {
+  overflow-y: scroll;
+}
+
+div.toLabel > label {
+  display: flex;
+  flex-direction: row-reverse;
+}
+
+.robot {
+  font-family: "b612", sans-serif;
+}
+
+.searchbar-div {
+  margin-top: 5px;
+}
+
+.notes-searchbar {
+  width: 90%;
+  margin-bottom: 10px;
+
+  background-color: #eeeeee;
+}
+
+body.ReactModal__Body--open {
+  overflow: hidden;
+  position: relative;
+
+  #root {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    filter: blur(2px);
+  }
+}
+
+.btn-flat {
+  background-color: purple;
+  color: white;
+}
+
+.btn-xxl {
+  padding: 1rem 1.5rem;
+  font-size: 1.5rem;
+}
+
+.no-messages {
+  margin-top: 40vh;
+  padding: 10px;
+  font-size: 32px;
+}
+
+.sender-address {
+  cursor: help;
+}
+
+.sender-address:hover {
+  border-bottom-color: #eeeeee;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+}

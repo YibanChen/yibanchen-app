@@ -1,23 +1,33 @@
-import logo from './logo.svg';
-import './App.css';
+import React from "react";
+import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
+import Notes from "./pages/Notes";
+import YibanNavbar from "./components/Navbar";
+import Settings from "./pages/Settings";
+import About from "./pages/About";
+import Compose from "./pages/Compose";
+import NotFound from "./pages/NotFound";
+import "./index.css";
+import "./App.css";
 
 function App() {
+  if (localStorage.getItem("currentAccount") !== undefined) {
+    global.currentAccount = localStorage.getItem("currentAccount") || "";
+  }
+
+  document.body.style = "background: #333333;";
+  document.body.style.overflow = "hidden";
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      <Router>
+        <YibanNavbar />
+        <Switch>
+          <Route path="/" exact component={About} />
+          <Route path="/inbox" exact component={Notes} />
+          <Route path="/Compose" exact component={Compose} />
+          <Route path="/settings" component={Settings} />
+          <Route component={NotFound} />
+        </Switch>
+      </Router>
     </div>
   );
 }
