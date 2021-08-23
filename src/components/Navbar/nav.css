@@ -1,0 +1,21 @@
+.color-nav {
+  background-color: #191b1f;
+}
+
+/* .navbar-brand {
+  display: flex;
+  align-items: center;
+}
+.navbar-brand > img {
+  padding: 7px 14px;
+} */
+
+.robot {
+  font-family: "b612", sans-serif;
+  align-items: center;
+}
+
+.account-dropdown {
+  height: 300px;
+  overflow-y: scroll;
+}
