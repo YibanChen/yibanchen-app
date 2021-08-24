@@ -200,22 +200,25 @@ class ComposeScreen extends Component {
             totalIssuance: "string",
             owner: "string",
             data: "string",
-        },
+          },
           Note: "Text",
           NoteIndex: "u32",
         },
       });
-      const keyring = new Keyring({ type: "sr25519" });
-      const alice = keyring.addFromUri("//Alice");
-      const { nonce, data: balance } = await api.query.system.account(
-        this.state.selectedAccount.address
-      );
+      // Transfer tokens from Alice dev account to user account
+      // Helpful during development process of testing new wallets
 
-      const transfer = api.tx.balances.transfer(
-        this.state.selectedAccount.address,
-        1234500000
-      );
-      const transferHash = await transfer.signAndSend(alice);
+      // const keyring = new Keyring({ type: "sr25519" });
+      // const alice = keyring.addFromUri("//Alice");
+      // const { nonce, data: balance } = await api.query.system.account(
+      //   this.state.selectedAccount.address
+      // );
+
+      // const transfer = api.tx.balances.transfer(
+      //   this.state.selectedAccount.address,
+      //   1234500000
+      // );
+      // const transferHash = await transfer.signAndSend(alice);
 
       let txHash;
       let txs = [];
@@ -560,7 +563,7 @@ class ComposeScreen extends Component {
             <div className="form-group form-inline scroll-flow">
               <TextareaAutosize
                 ref={this.textAreaRef}
-                onResize={(e) => {}}
+                onResize={(e) => { }}
                 className="messageInput"
                 rows={12}
                 maxRows={15}
