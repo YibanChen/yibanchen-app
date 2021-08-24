@@ -68,6 +68,21 @@ export default function SettingsScreen({ navigation }) {
       provider: wsProvider,
       types: {
         //AccountInfo: "AccountInfoWithDualRefCount",
+        ClassId: "u32",
+        ClassIdOf: "ClassId",
+        TokenId: "u64",
+        TokenIdOf: "TokenId",
+        TokenInfoOf: {
+          metadata: "CID",
+          owner: "AccountId",
+          data: "TokenData"
+        },
+        ClassInfoOf: {
+          metadata: "string",
+          totalIssuance: "string",
+          owner: "string",
+          data: "string",
+        },
         Note: "Text",
         NoteIndex: "u32",
       },
@@ -122,7 +137,7 @@ export default function SettingsScreen({ navigation }) {
         <Form.Label>Piñata Key</Form.Label>
 
         <Form.Control
-          onResize={(e) => {}}
+          onResize={(e) => { }}
           className="messageInput"
           onChange={(e) => updatePinataKey(e)}
           defaultValue={
@@ -137,7 +152,7 @@ export default function SettingsScreen({ navigation }) {
           <p className="m-1">Piñata Secret Key</p>
         </Form.Label>
         <Form.Control
-          onResize={(e) => {}}
+          onResize={(e) => { }}
           className="messageInput"
           onChange={(e) => updatePinataSecretKey(e)}
           defaultValue={

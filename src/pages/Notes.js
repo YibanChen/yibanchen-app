@@ -90,9 +90,9 @@ class NoteItem extends Component {
           <p>
             {this.props.messageObject.sender
               ? `${this.props.messageObject.sender.address.slice(
-                  0,
-                  6
-                )}...${this.props.messageObject.sender.address.slice(42, 48)}`
+                0,
+                6
+              )}...${this.props.messageObject.sender.address.slice(42, 48)}`
               : ""}
           </p>
           <br />
@@ -144,6 +144,21 @@ class NoteDetails extends Component {
       provider: wsProvider,
       types: {
         //AccountInfo: "AccountInfoWithDualRefCount",
+        ClassId: "u32",
+        ClassIdOf: "ClassId",
+        TokenId: "u64",
+        TokenIdOf: "TokenId",
+        TokenInfoOf: {
+          metadata: "CID",
+          owner: "AccountId",
+          data: "TokenData"
+        },
+        ClassInfoOf: {
+          metadata: "string",
+          totalIssuance: "string",
+          owner: "string",
+          data: "string",
+        },
         Note: "Text",
         NoteIndex: "u32",
       },
@@ -209,6 +224,21 @@ class NoteDetails extends Component {
       provider: wsProvider,
       types: {
         //AccountInfo: "AccountInfoWithDualRefCount",
+        ClassId: "u32",
+        ClassIdOf: "ClassId",
+        TokenId: "u64",
+        TokenIdOf: "TokenId",
+        TokenInfoOf: {
+          metadata: "CID",
+          owner: "AccountId",
+          data: "TokenData"
+        },
+        ClassInfoOf: {
+          metadata: "string",
+          totalIssuance: "string",
+          owner: "string",
+          data: "string",
+        },
         Note: "Text",
         NoteIndex: "u32",
       },
@@ -333,12 +363,12 @@ class NoteDetails extends Component {
                 >
                   {this.state.showFullAddress === false
                     ? `${this.props.messageToFocus.sender.address.slice(
-                        0,
-                        6
-                      )}...${this.props.messageToFocus.sender.address.slice(
-                        42,
-                        48
-                      )}`
+                      0,
+                      6
+                    )}...${this.props.messageToFocus.sender.address.slice(
+                      42,
+                      48
+                    )}`
                     : this.props.messageToFocus.sender.address}
                 </h5>
               </div>
@@ -471,6 +501,21 @@ export class Notes extends Component {
       provider: wsProvider,
       types: {
         //AccountInfo: "AccountInfoWithDualRefCount",
+        ClassId: "u32",
+        ClassIdOf: "ClassId",
+        TokenId: "u64",
+        TokenIdOf: "TokenId",
+        TokenInfoOf: {
+          metadata: "CID",
+          owner: "AccountId",
+          data: "TokenData"
+        },
+        ClassInfoOf: {
+          metadata: "string",
+          totalIssuance: "string",
+          owner: "string",
+          data: "string",
+        },
         Note: "Text",
         NoteIndex: "u32",
       },
