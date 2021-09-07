@@ -20,6 +20,23 @@
   background-color: black;
   outline-width: 0;
   font-size: 18px;
+  width: 80vw;
+}
+
+.recipientInput {
+  color: #04a902;
+  background-color: black;
+  outline-width: 0;
+  font-size: 18px;
+  width: 50vw;
+}
+
+.subjectInput {
+  color: #04a902;
+  background-color: black;
+  outline-width: 0;
+  font-size: 18px;
+  width: 50vw;
 }
 
 .fixedWidth {

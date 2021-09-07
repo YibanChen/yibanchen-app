@@ -45,7 +45,7 @@ const server = setupServer(
     return res(ctx.json({ token: "mocked_user_token" }));
   }),
 
-  rest.get("https://cloudflare-ipfs.com/ipfs(/*)", (req, res, ctx) => {
+  rest.get("https://ipfs.io/ipfs(/*)", (req, res, ctx) => {
     return res(
       ctx.delay(1500),
       ctx.status(202, "Mocked status"),
