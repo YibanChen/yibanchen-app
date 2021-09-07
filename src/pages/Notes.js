@@ -122,14 +122,6 @@ class NoteDetails extends Component {
       quoteAndReply: false,
     };
   }
-  componentWillReceiveProps(nextProps) {
-    this.setState({
-      error: false,
-      errorMessage: "",
-      noteTransferred: false,
-      messageRecipient: "",
-    });
-  }
 
   transferMessage = async () => {
     this.setState({ transferringNote: true });
@@ -163,7 +155,6 @@ class NoteDetails extends Component {
         NoteIndex: "u32",
       },
     });
-
     const { unused_nonce, data: balance } = await api.query.system.account(
       account.address
     );
@@ -223,22 +214,7 @@ class NoteDetails extends Component {
       // Create an API instance
       provider: wsProvider,
       types: {
-        //AccountInfo: "AccountInfoWithDualRefCount",
-        ClassId: "u32",
-        ClassIdOf: "ClassId",
-        TokenId: "u64",
-        TokenIdOf: "TokenId",
-        TokenInfoOf: {
-          metadata: "CID",
-          owner: "AccountId",
-          data: "TokenData"
-        },
-        ClassInfoOf: {
-          metadata: "string",
-          totalIssuance: "string",
-          owner: "string",
-          data: "string",
-        },
+        AccountInfo: "AccountInfoWithDualRefCount",
         Note: "Text",
         NoteIndex: "u32",
       },
@@ -316,7 +292,7 @@ class NoteDetails extends Component {
           contentLabel="DownloadExtensionModal"
         >
           <ComposeScreen
-            sender={
+            suggestedRecipient={
               this.props.messageToFocus.sender
                 ? this.props.messageToFocus.sender.address
                 : ""
@@ -460,7 +436,7 @@ export class Notes extends Component {
     super();
     this.focusNote = this.focusNote.bind(this);
     this.removeFromNotes = this.removeFromNotes.bind(this);
-    this.notesPerPage = 10;
+    this.notesPerPage = 1000;
     this.state = {
       active: 0,
 
@@ -500,22 +476,7 @@ export class Notes extends Component {
       // Create an API instance
       provider: wsProvider,
       types: {
-        //AccountInfo: "AccountInfoWithDualRefCount",
-        ClassId: "u32",
-        ClassIdOf: "ClassId",
-        TokenId: "u64",
-        TokenIdOf: "TokenId",
-        TokenInfoOf: {
-          metadata: "CID",
-          owner: "AccountId",
-          data: "TokenData"
-        },
-        ClassInfoOf: {
-          metadata: "string",
-          totalIssuance: "string",
-          owner: "string",
-          data: "string",
-        },
+        AccountInfo: "AccountInfoWithDualRefCount",
         Note: "Text",
         NoteIndex: "u32",
       },
@@ -523,7 +484,7 @@ export class Notes extends Component {
 
     try {
       if (global.currentAccount === "") {
-        throw "No wallet global.address found!";
+        throw Error("No wallet global.address found!");
       }
       let hashes = [];
 
@@ -572,8 +533,8 @@ export class Notes extends Component {
           continue;
         }
         await axios // Query IPFS with the hash
-          .get("https://cloudflare-ipfs.com/ipfs/" + hashAsString, {
-            timeout: 500,
+          .get("https://ipfs.io/ipfs/" + hashAsString, {
+            timeout: 2000,
           })
           .then((response) => {
             let message = response.data.note;
@@ -632,6 +593,7 @@ export class Notes extends Component {
           .catch(function (error) {
             console.log("AXIOS ERROR");
             console.log(error.message);
+            console.log("hash that couldn't be loaded: ", hashAsString);
             if (error.message === "timeout of 1000ms exceeded") {
               console.log(
                 `if you are seeing this, it means that the note you tried to access

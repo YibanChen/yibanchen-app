@@ -15,6 +15,7 @@ import {
 import wsProvider from "../util/WsProvider";
 import "./style.css";
 import SimpleButton from "../components/SimpleButton";
+import { next } from "cheerio/lib/api/traversing";
 
 const { decodeAddress, encodeAddress } = require("@polkadot/keyring");
 const { hexToU8a, isHex } = require("@polkadot/util");
@@ -65,7 +66,7 @@ class AccountItem extends Component {
   }
 }
 
-// Modal.setAppElement("#root");
+Modal.setAppElement("#root");
 const { Keyring } = require("@polkadot/keyring");
 let CryptoJS = require("crypto-js");
 
@@ -80,7 +81,6 @@ class ComposeScreen extends Component {
       creating: false,
       messageSent: false,
       encryptMessage: false,
-      recipient: "",
       modalIsOpen: false,
       accountSelectionModalIsOpen: false,
       accountIndex: 0,
@@ -90,6 +90,7 @@ class ComposeScreen extends Component {
       messageRecipient: "",
       messageSubject: "",
       noteIndex: NaN,
+      selectedAccount: { address: "" },
     };
   }
 
@@ -148,7 +149,7 @@ class ComposeScreen extends Component {
               "Your Pinata keys are invalid. Please make sure you have pasted them correctly",
             loading: false,
           });
-          throw "pinata error";
+          throw Error("pinata error");
         });
       // Otherwise, send it to our server
     } else {
@@ -168,7 +169,7 @@ class ComposeScreen extends Component {
             errorMessage: "error pinning file to IPFS. Please try again later",
             loading: false,
           });
-          throw "node error";
+          throw Error("node error");
         });
     }
 
@@ -227,17 +228,28 @@ class ComposeScreen extends Component {
         // Put the note hash on the blockchain
         txHash = await api.tx.note.create(noteHash);
 
+        console.log(
+          "messageRecipient right before transfer: ",
+          this.state.messageRecipient,
+          "noteIndex: ",
+          this.state.noteIndex
+        );
+
+        const nextNoteIdObject = await api.query.note.nextNoteId();
+        const nextNoteId = nextNoteIdObject.words[0];
+        console.log("nextNoteId: ", nextNoteId);
+
         // Transfer the note to the recipient
         let transfer = api.tx.note.transfer(
           this.state.messageRecipient,
-          this.state.noteIndex
+          nextNoteId
         );
 
         // Sign and send these transacations as a batch so that password prompt only appears once
         txs.push(txHash);
         txs.push(transfer);
         this.setState({ creating: false });
-        api.tx.utility
+        await api.tx.utility
           .batch(txs)
           .signAndSend(
             account.address,
@@ -247,6 +259,7 @@ class ComposeScreen extends Component {
                 events.forEach(
                   ({ event: { data, method, section }, phase }) => {
                     const noteI = Number(data[1]);
+                    console.log("NOTEI: ", noteI);
 
                     if (!isNaN(noteI)) {
                       this.setState({ noteIndex: noteI });
@@ -297,7 +310,7 @@ class ComposeScreen extends Component {
           errorMessage:
             "The recipient address you have entered is not a valid Polkadot address. Please make sure you have entered it correctly.",
         });
-        throw "invalid recipient";
+        throw Error("invalid recipient");
       }
 
       // Alert user if subject is empty
@@ -387,7 +400,7 @@ class ComposeScreen extends Component {
   };
 
   setRecipient = (e) => {
-    this.setState({ recipient: e.target.value });
+    this.setState({ messageRecipient: e.target.value });
   };
 
   async componentDidMount() {
@@ -398,13 +411,7 @@ class ComposeScreen extends Component {
       if (this.props.location.state) {
         // state was passed
         const { sender } = this.props.location.state;
-
-        this.setState({ messageRecipient: sender });
       }
-    }
-
-    if (this.props.sender) {
-      this.setState({ messageRecipient: this.props.sender });
     }
 
     if (this.props.suggestedSubject) {
@@ -413,6 +420,10 @@ class ComposeScreen extends Component {
 
     if (this.props.suggestedBody) {
       this.setState({ message: ` > ${this.props.suggestedBody} \n \n` });
+    }
+
+    if (this.props.suggestedRecipient) {
+      this.setState({ messageRecipient: this.props.suggestedRecipient });
     }
 
     const extensions = await web3Enable("YibanChen");
@@ -532,7 +543,7 @@ class ComposeScreen extends Component {
                 To:
               </label>
               <TextareaAutosize
-                className="messageInput"
+                className="recipientInput"
                 onChange={(e) =>
                   this.setState({ messageRecipient: e.target.value })
                 }
@@ -549,7 +560,7 @@ class ComposeScreen extends Component {
                 Subject:
               </label>
               <TextareaAutosize
-                className="messageInput"
+                className="subjectInput"
                 onChange={(e) =>
                   this.setState({ messageSubject: e.target.value })
                 }

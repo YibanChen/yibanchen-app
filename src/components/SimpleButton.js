@@ -16,7 +16,7 @@ class SimpleButton extends Component {
         </style>
         <Button
           variant="flat"
-          buttonSize={this.props.buttonSize}
+          size={this.props.buttonSize}
           onClick={this.props.action}
         >
           {this.props.buttonText}

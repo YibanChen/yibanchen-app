@@ -14,11 +14,6 @@ import wsProvider from "../util/WsProvider";
   localStorage.setItem("secretKey", e.target.value);
 } */
 
-function hardRefresh(e) {
-  e.preventDefault();
-  window.location.href = window.location.href;
-}
-
 function updatePinataKey(e) {
   localStorage.setItem("pinataKey", e.target.value);
 }
@@ -106,8 +101,16 @@ export default function SettingsScreen({ navigation }) {
   };
 
   useEffect(() => {
+    const fetchData = async () => {
+      const extensions = await web3Enable("YibanChen"); // Needed for the next call
+      const allAccounts = await web3Accounts();
+      if (JSON.parse(localStorage.getItem("currentAccount"))) {
+        updateWalletBalance();
+      }
+
+      setExtensionAccounts(allAccounts);
+    };
     fetchData();
-    console.log("extensionAccounts: ", extensionAccounts);
     return;
   }, []);
 
@@ -131,13 +134,12 @@ export default function SettingsScreen({ navigation }) {
         <Switch
           label="Use personal Piñata account"
           onChange={(e) => updateUsePersonalPinataKey(e)}
-          checked={usePersonalPinataKey}
+          checked={!!usePersonalPinataKey}
         />
         <br />
         <Form.Label>Piñata Key</Form.Label>
 
         <Form.Control
-          onResize={(e) => { }}
           className="messageInput"
           onChange={(e) => updatePinataKey(e)}
           defaultValue={
@@ -152,7 +154,6 @@ export default function SettingsScreen({ navigation }) {
           <p className="m-1">Piñata Secret Key</p>
         </Form.Label>
         <Form.Control
-          onResize={(e) => { }}
           className="messageInput"
           onChange={(e) => updatePinataSecretKey(e)}
           defaultValue={
@@ -175,7 +176,7 @@ export default function SettingsScreen({ navigation }) {
           <Switch
             label="Use personal Piñata account"
             onChange={(e) => updateUsePersonalPinataKey(e)}
-            checked={usePersonalPinataKey}
+            checked={!!usePersonalPinataKey}
           />
         </label>
       </Form>
@@ -193,26 +194,10 @@ export default function SettingsScreen({ navigation }) {
     );
   }
 
-  console.log(`extensionaccounts len: ${extensionAccounts.length}`);
-
-  const refreshLink =
-    extensionAccounts.length === 0 ? (
-      <p>
-        Dropdown not displaying your accounts? Click{" "}
-        <a href="/settings" onClick={hardRefresh}>
-          here
-        </a>{" "}
-        to refresh the page
-      </p>
-    ) : (
-      <p></p>
-    );
-
   return (
     <div className="centered">
       <div className="centered p-3">
         <h3>Account</h3>
-        {refreshLink}
         <Dropdown>
           <Dropdown.Toggle variant="primary" id="dropdown-basic">
             <Identicon
@@ -225,7 +210,7 @@ export default function SettingsScreen({ navigation }) {
 
           <Dropdown.Menu className="account-dropdown">
             {extensionAccounts.map((account) => (
-              <div onClick={() => updateAccount(account)}>
+              <div key={account.address} onClick={() => updateAccount(account)}>
                 <Dropdown.Item>
                   <AccountListItem account={account}></AccountListItem>
                 </Dropdown.Item>
