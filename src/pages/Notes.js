@@ -135,7 +135,7 @@ class NoteDetails extends Component {
       // Create an API instance
       provider: wsProvider,
       types: {
-        //AccountInfo: "AccountInfoWithDualRefCount",
+      //  AccountInfo: "AccountInfoWithDualRefCount",
         ClassId: "u32",
         ClassIdOf: "ClassId",
         TokenId: "u64",
@@ -214,7 +214,7 @@ class NoteDetails extends Component {
       // Create an API instance
       provider: wsProvider,
       types: {
-        AccountInfo: "AccountInfoWithDualRefCount",
+      //  AccountInfo: "AccountInfoWithDualRefCount",
         Note: "Text",
         NoteIndex: "u32",
       },
@@ -476,7 +476,7 @@ export class Notes extends Component {
       // Create an API instance
       provider: wsProvider,
       types: {
-        AccountInfo: "AccountInfoWithDualRefCount",
+      //  AccountInfo: "AccountInfoWithDualRefCount",
         Note: "Text",
         NoteIndex: "u32",
       },
