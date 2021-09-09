@@ -18,6 +18,7 @@ import { setupServer } from "msw/node";
 import { rest } from "msw";
 import axios from "axios";
 import { act } from "react-dom/test-utils";
+import * as Sentry from "@sentry/react";
 
 configure({
   adapter: new Adapter(),
