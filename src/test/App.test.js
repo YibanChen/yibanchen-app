@@ -2,23 +2,16 @@ import React from "react";
 import Loader from "react-loader-spinner";
 import { mount, configure, shallow } from "enzyme";
 import { expect } from "chai";
-import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
-import YibanNavbar from "../components/Navbar";
 import Notes from "../pages/Notes";
 import Settings from "../pages/Settings";
-import About from "../pages/About";
-import Compose from "../pages/Compose";
-import NotFound from "../pages/NotFound";
-import chai from "chai";
-import chaiEnzyme from "chai-enzyme";
+// import chai from "chai";
+// import chaiEnzyme from "chai-enzyme";
 import Adapter from "enzyme-adapter-react-16";
-import App from "../App";
 import AccountListItem from "../components/AccountListItem";
 import { setupServer } from "msw/node";
 import { rest } from "msw";
 import axios from "axios";
-import { act } from "react-dom/test-utils";
-import * as Sentry from "@sentry/react";
+// import { act } from "react-dom/test-utils";
 
 configure({
   adapter: new Adapter(),
@@ -75,28 +68,6 @@ beforeEach(async () => {
 
 afterEach(function () {
   server.close();
-});
-
-describe("Testing <App/>", () => {
-  it("renders", () => {
-    const wrapper = shallow(<App />);
-    const message = (
-      <div className="App">
-        <Router>
-          <YibanNavbar />
-          <Switch>
-            <Route path="/" exact component={About} />
-            <Route path="/inbox" exact component={Notes} />
-            <Route path="/Compose" exact component={Compose} />
-            <Route path="/settings" component={Settings} />
-            <Route component={NotFound} />
-          </Switch>
-        </Router>
-      </div>
-    );
-    expect(wrapper).to.contain(message);
-  });
-  chai.use(chaiEnzyme());
 });
 
 describe("Testing the inbox", function () {

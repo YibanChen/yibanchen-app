@@ -66,7 +66,7 @@ class AccountItem extends Component {
   }
 }
 
-Modal.setAppElement("#root");
+//Modal.setAppElement("#root");
 const { Keyring } = require("@polkadot/keyring");
 let CryptoJS = require("crypto-js");
 
