@@ -1,17 +1,16 @@
 import React from "react";
 import Loader from "react-loader-spinner";
-import { mount, configure, shallow } from "enzyme";
+import { configure, shallow } from "enzyme";
 import { expect } from "chai";
 import Notes from "../pages/Notes";
 import Settings from "../pages/Settings";
-// import chai from "chai";
-// import chaiEnzyme from "chai-enzyme";
 import Adapter from "enzyme-adapter-react-16";
 import AccountListItem from "../components/AccountListItem";
 import { setupServer } from "msw/node";
 import { rest } from "msw";
 import axios from "axios";
-// import { act } from "react-dom/test-utils";
+import Identicon from "@polkadot/react-identicon";
+import { Dropdown } from "react-bootstrap";
 
 configure({
   adapter: new Adapter(),
@@ -99,29 +98,39 @@ describe("Testing the inbox", function () {
 });
 
 describe("Testing Account List Item component", function () {
-  it("should render properly", function () {
+  it("should contain the expected props", function () {
     // global.address = "5FyNFTsWZ8mZpR83rED6gc1gQD85jKbsR7d4SV5aiNAPvMGH";
     const testAcc = {
       address: "5FyNFTsWZ8mZpR83rED6gc1gQD85jKbsR7d4SV5aiNAPvMGH",
       meta: { name: "max test" },
     };
     const wrapper = shallow(<AccountListItem account={testAcc} />);
-  });
-  it("should have prop for account", function () {
-    const testAcc = {
-      address: "5FyNFTsWZ8mZpR83rED6gc1gQD85jKbsR7d4SV5aiNAPvMGH",
-      meta: { name: "max test" },
-    };
-    const wrapper = shallow(<AccountListItem account={testAcc} />);
+
+    expect(wrapper.props().children.props.children[0].props.value).to.equal(
+      "5FyNFTsWZ8mZpR83rED6gc1gQD85jKbsR7d4SV5aiNAPvMGH"
+    );
+    expect(wrapper.props().children.props.children[2]).to.equal("max test");
   });
 });
 
 describe("Testing settings", function () {
-  it("should render properly", function () {
+  it("should render properly with expected elements and values", function () {
     const wrapper = shallow(<Settings />);
     const testAcc = {
       address: "5FyNFTsWZ8mZpR83rED6gc1gQD85jKbsR7d4SV5aiNAPvMGH",
       meta: { name: "max test" },
     };
+    console.log("button: ", wrapper.find("div"));
+    expect(wrapper.find("div")).to.have.length(4);
+    expect(wrapper.find("h3")).to.have.length(2);
+    expect(wrapper.find(Dropdown)).to.have.length(1);
+    expect(wrapper.find(Dropdown).find(Identicon)).to.have.length(1);
+    console.log(wrapper.find(Dropdown).find(Identicon).props());
+    expect(wrapper.find(Dropdown).find(Identicon).props().value).to.equal(
+      "5FyNFTsWZ8mZpR83rED6gc1gQD85jKbsR7d4SV5aiNAPvMGH"
+    );
+    expect(wrapper.find(Dropdown).find(Identicon).props().theme).to.equal(
+      "polkadot"
+    );
   });
 });
