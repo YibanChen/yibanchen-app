@@ -3,8 +3,14 @@ import { ApiPromise } from "@polkadot/api";
 import { Redirect } from "react-router-dom";
 import axios from "axios";
 import Button from "react-bootstrap/Button";
-import Modal from "react-modal";
-import Loader from "react-loader-spinner";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faTrash,
+  faReply,
+  faArrowLeft,
+  faAngleLeft,
+} from "@fortawesome/free-solid-svg-icons";
+import { ProgressBar } from "react-bootstrap";
 import Identicon from "@polkadot/react-identicon";
 import TextareaAutosize from "react-autosize-textarea";
 import {
@@ -13,33 +19,26 @@ import {
   web3FromSource,
 } from "@polkadot/extension-dapp";
 import wsProvider from "../util/WsProvider";
-import "./style.css";
+import { postNote, putNote, deleteNote } from "../util/NotesApi";
+import { sendErrorToServer, checkUserBalance } from "../util/Utils";
 import SimpleButton from "../components/SimpleButton";
-import { next } from "cheerio/lib/api/traversing";
+import * as Sentry from "@sentry/react";
+import "./style.css";
+import "./composeStyles.css";
+
+import YibanLoader from "../components/YibanLoader";
 
 const { decodeAddress, encodeAddress } = require("@polkadot/keyring");
 const { hexToU8a, isHex } = require("@polkadot/util");
-
-const customStyles = {
-  content: {
-    top: "50%",
-    left: "50%",
-    right: "auto",
-    bottom: "auto",
-    marginRight: "-50%",
-    transform: "translate(-50%, -50%)",
-    textAlign: "center",
-    color: "#eeeeee",
-    backgroundColor: "#333333",
-  },
-};
 
 const isValidPolkadotAddress = (address) => {
   try {
     encodeAddress(isHex(address) ? hexToU8a(address) : decodeAddress(address));
 
     return true;
-  } catch (error) {
+  } catch (err) {
+    sendErrorToServer(err);
+    Sentry.captureException(err);
     return false;
   }
 };
@@ -66,8 +65,6 @@ class AccountItem extends Component {
   }
 }
 
-//Modal.setAppElement("#root");
-const { Keyring } = require("@polkadot/keyring");
 let CryptoJS = require("crypto-js");
 
 class ComposeScreen extends Component {
@@ -81,8 +78,7 @@ class ComposeScreen extends Component {
       creating: false,
       messageSent: false,
       encryptMessage: false,
-      modalIsOpen: false,
-      accountSelectionModalIsOpen: false,
+      recipient: "",
       accountIndex: 0,
       accounts: [],
       error: false,
@@ -90,7 +86,8 @@ class ComposeScreen extends Component {
       messageRecipient: "",
       messageSubject: "",
       noteIndex: NaN,
-      selectedAccount: { address: "" },
+      noteUuid: NaN,
+      percentCompleted: 0,
     };
   }
 
@@ -103,25 +100,7 @@ class ComposeScreen extends Component {
     global.currentAccount = acc;
     localStorage.setItem("walletAddress", acc.address);
     localStorage.setItem("currentAccount", JSON.stringify(acc));
-
-    this.closeAccountSelectionModal();
   }
-
-  openModal = () => {
-    this.setState({ modalIsOpen: true });
-  };
-
-  closeModal = () => {
-    this.setState({ modalIsOpen: false });
-  };
-
-  openAccountSelectionModal = () => {
-    this.setState({ accountSelectionModalIsOpen: true });
-  };
-
-  closeAccountSelectionModal = () => {
-    this.setState({ accountSelectionModalIsOpen: false });
-  };
 
   pinFileToIPFS = async (pinataApiKey, pinataSecretApiKey, JSONBody) => {
     const url = `https://api.pinata.cloud/pinning/pinJSONToIPFS`;
@@ -129,7 +108,7 @@ class ComposeScreen extends Component {
 
     // If user has entered their own pinata key, send the IPFS request client side
     if (pinataApiKey) {
-      let data = await axios
+      await axios
         .post(url, JSONBody, {
           headers: {
             pinata_api_key: pinataApiKey,
@@ -151,25 +130,20 @@ class ComposeScreen extends Component {
           });
           throw Error("pinata error");
         });
-      // Otherwise, send it to our server
     } else {
-      let nodeData = await axios
-        .post("https://api.yibanchen.com:443/pinMessage", JSONBody, {
-          headers: {},
-        })
-        .then(function (response) {
-          hashToReturn = response.data.IpfsHash;
+      await postNote(JSONBody)
+        .then((res) => {
+          hashToReturn = res.IpfsHash;
+          console.log("RES: ", res);
+          this.setState({ noteUuid: res.uuid });
         })
         .catch((err) => {
-          console.log("error calling node backend");
-          console.log("err.message: ", err.message);
-
           this.setState({
             error: true,
-            errorMessage: "error pinning file to IPFS. Please try again later",
+            errorMessage: "error pinning to IPFS. Please try again later",
             loading: false,
           });
-          throw Error("node error");
+          console.log(err);
         });
     }
 
@@ -177,89 +151,74 @@ class ComposeScreen extends Component {
   };
 
   async writeHashToBlockchain(noteHash) {
-    try {
-      const extensions = await web3Enable("YibanChen");
-      const allAccounts = await web3Accounts();
-      const account = this.state.selectedAccount;
-      const injector = await web3FromSource(account.meta.source);
-      const api = await ApiPromise.create({
-        // Create an API instance
-        provider: wsProvider,
-        types: {
-          //AccountInfo: "AccountInfoWithDualRefCount",
-          ClassId: "u32",
-          ClassIdOf: "ClassId",
-          TokenId: "u64",
-          TokenIdOf: "TokenId",
-          TokenInfoOf: {
-            metadata: "CID",
-            owner: "AccountId",
-            data: "TokenData"
-          },
-          ClassInfoOf: {
-            metadata: "string",
-            totalIssuance: "string",
-            owner: "string",
-            data: "string",
-          },
-          Note: "Text",
-          NoteIndex: "u32",
+    await web3Enable("YibanChen");
+    await web3Accounts();
+    const account = this.state.selectedAccount;
+    const injector = await web3FromSource(account.meta.source);
+
+    const api = await ApiPromise.create({
+      // Create an API instance
+      provider: wsProvider,
+      types: {
+        ClassId: "u32",
+        ClassIdOf: "ClassId",
+        TokenId: "u64",
+        TokenIdOf: "TokenId",
+        TokenInfoOf: {
+          metadata: "CID",
+          owner: "AccountId",
+          data: "TokenData",
         },
-      });
-      // Transfer tokens from Alice dev account to user account
-      // Helpful during development process of testing new wallets
+        SiteIndex: "u32",
+        Site: {
+          ipfs_cid: "Text",
+          site_name: "Text",
+        },
+        ClassInfoOf: {
+          metadata: "string",
+          totalIssuance: "string",
+          owner: "string",
+          data: "string",
+        },
+        Note: "Text",
+        NoteIndex: "u32",
+      },
+    });
 
-      // const keyring = new Keyring({ type: "sr25519" });
-      // const alice = keyring.addFromUri("//Alice");
-      // const { nonce, data: balance } = await api.query.system.account(
-      //   this.state.selectedAccount.address
-      // );
+    this.polkadotApi = api;
 
-      // const transfer = api.tx.balances.transfer(
-      //   this.state.selectedAccount.address,
-      //   1234500000
-      // );
-      // const transferHash = await transfer.signAndSend(alice);
+    let txHash;
+    let txs = [];
 
-      let txHash;
-      let txs = [];
+    // Put the note hash on the blockchain
+    txHash = await api.tx.note.create(noteHash);
 
+    const nextNoteIdObject = await api.query.note.nextNoteId();
+    const nextNoteId = nextNoteIdObject.words[0];
+
+    // Transfer the note to the recipient
+    let transfer = api.tx.note.transfer(
+      this.state.messageRecipient,
+      nextNoteId
+    );
+
+    // Sign and send these transacations as a batch so that password prompt only appears once
+    txs.push(txHash);
+    txs.push(transfer);
+
+    if (!this.state.error) {
       try {
-        // Put the note hash on the blockchain
-        txHash = await api.tx.note.create(noteHash);
-
-        console.log(
-          "messageRecipient right before transfer: ",
-          this.state.messageRecipient,
-          "noteIndex: ",
-          this.state.noteIndex
-        );
-
-        const nextNoteIdObject = await api.query.note.nextNoteId();
-        const nextNoteId = nextNoteIdObject.words[0];
-        console.log("nextNoteId: ", nextNoteId);
-
-        // Transfer the note to the recipient
-        let transfer = api.tx.note.transfer(
-          this.state.messageRecipient,
-          nextNoteId
-        );
-
-        // Sign and send these transacations as a batch so that password prompt only appears once
-        txs.push(txHash);
-        txs.push(transfer);
-        this.setState({ creating: false });
         await api.tx.utility
           .batch(txs)
           .signAndSend(
             account.address,
             { signer: injector.signer },
             ({ events = [], status }) => {
+              this.setState({ creating: false });
               if (status.isInBlock) {
                 events.forEach(
                   ({ event: { data, method, section }, phase }) => {
                     const noteI = Number(data[1]);
-                    console.log("NOTEI: ", noteI);
 
                     if (!isNaN(noteI)) {
                       this.setState({ noteIndex: noteI });
@@ -268,6 +227,10 @@ class ComposeScreen extends Component {
                 );
               } else if (status.isFinalized) {
                 console.log("Finalized block hash", status.asFinalized.toHex());
+                this.confirmNoteUpload(
+                  this.state.noteIndex,
+                  this.state.noteUuid
+                );
 
                 this.setState({
                   sending: false,
@@ -278,22 +241,58 @@ class ComposeScreen extends Component {
             }
           );
       } catch (err) {
-        console.log("error transfering note");
-        console.log("err: ", err, typeof err, err.message);
         this.setState({
           error: true,
-          errorMessage: err.message,
+          errorMessage: "Cancelled",
           loading: false,
         });
+        this.removeNote(this.state.noteUuid, noteHash);
+        console.log(err);
+        if (err.message !== "Cancelled") {
+          sendErrorToServer(err);
+          Sentry.captureException(err);
+        }
       }
-      console.log(`txHash2: ${txHash}`);
-    } catch (err) {
-      console.log("error writing hash to blockchain");
-      console.log(err);
-      this.setState({ error: true, errorMessage: err.message, loading: false });
-      return;
     }
+
+    console.log(`txHash2: ${txHash}`);
   }
+
+  confirmNoteUpload = async (index, uuid) => {
+    const data = {};
+    data["noteIndex"] = index;
+    await putNote(uuid, data)
+      .then((res) => {
+        console.log(res);
+      })
+      .catch((err) => {
+        this.setState({
+          error: true,
+          errorMessage: "error pinning to IPFS. Please try again later",
+          loading: false,
+        });
+        console.log(err);
+      });
+  };
+
+  removeNote = async (uuid, IpfsHash) => {
+    const data = { IpfsHash: IpfsHash };
+    console.log("uuid to delete: ", uuid);
+    data["siteUuid"] = uuid;
+
+    await deleteNote(uuid, data)
+      .then((res) => {
+        console.log(res);
+      })
+      .catch((err) => {
+        this.setState({
+          error: true,
+          errorMessage: "error pinning to IPFS. Please try again later",
+          loading: false,
+        });
+        console.log(err);
+      });
+  };
 
   sendMessage = async () => {
     try {
@@ -303,14 +302,24 @@ class ComposeScreen extends Component {
       const isValid = isValidPolkadotAddress(this.state.messageRecipient);
 
       if (!isValid) {
+        alert(
+          "The recipient address you have entered is not a valid Polkadot address. Please make sure you have entered it correctly."
+        );
         this.setState({
           loading: false,
           creating: false,
-          error: true,
-          errorMessage:
-            "The recipient address you have entered is not a valid Polkadot address. Please make sure you have entered it correctly.",
         });
-        throw Error("invalid recipient");
+        return;
+      }
+
+      const userHasEnoughTokens = await checkUserBalance(
+        this.state.selectedAccount.address,
+        this.polkadotApi
+      );
+      if (!userHasEnoughTokens) {
+        alert("You have insufficient funds to make this transacation.");
+        this.setState({ loading: false, creating: false });
+        return;
       }
 
       // Alert user if subject is empty
@@ -348,22 +357,8 @@ class ComposeScreen extends Component {
         pinataSecretKey = localStorage.getItem("pinataSecretKey");
       }
 
-      // Encrypt the message
       let messageToSend = this.state.message;
       let timestamp = new Date().toISOString();
-
-      if (this.state.encryptMessage) {
-        const encrypted = CryptoJS.AES.encrypt(
-          this.state.message,
-          global.secret
-        );
-        const encryptedTimestamp = CryptoJS.AES.encrypt(
-          timestamp,
-          global.secret
-        );
-        messageToSend = encrypted;
-        timestamp = encryptedTimestamp;
-      }
 
       let jsonBody = {
         note: messageToSend.toString(),
@@ -379,10 +374,14 @@ class ComposeScreen extends Component {
         jsonBody
       ); // pin file to IPFS via pinata and get the hash
 
+      console.log("calling write hash to chain");
+
       this.writeHashToBlockchain(noteHash);
     } catch (err) {
       console.log("error: ", err);
       this.setState({ error: true, loading: false });
+      sendErrorToServer(err);
+      Sentry.captureException(err);
       return;
     }
   };
@@ -400,18 +399,52 @@ class ComposeScreen extends Component {
   };
 
   setRecipient = (e) => {
-    this.setState({ messageRecipient: e.target.value });
+    this.setState({ recipient: e.target.value });
   };
 
   async componentDidMount() {
-    console.log(`suggested subject: ${this.props.suggestedSubject}`);
-    console.log(`suggested subject: ${this.props.suggestedBody}`);
+    const api = await ApiPromise.create({
+      // Create an API instance
+      provider: wsProvider,
+      types: {
+        ClassId: "u32",
+        ClassIdOf: "ClassId",
+        TokenId: "u64",
+        TokenIdOf: "TokenId",
+        TokenInfoOf: {
+          metadata: "CID",
+          owner: "AccountId",
+          data: "TokenData",
+        },
+        SiteIndex: "u32",
+        Site: {
+          ipfs_cid: "Text",
+          site_name: "Text",
+        },
+        ClassInfoOf: {
+          metadata: "string",
+          totalIssuance: "string",
+          owner: "string",
+          data: "string",
+        },
+        Note: "Text",
+        NoteIndex: "u32",
+      },
+    });
+
+    this.polkadotApi = api;
 
     if (this.props.location) {
       if (this.props.location.state) {
         // state was passed
         const { sender } = this.props.location.state;
+
+        this.setState({ messageRecipient: sender });
       }
+    }
+
+    if (this.props.suggestedRecipient) {
+      this.setState({ messageRecipient: this.props.suggestedRecipient });
     }
 
     if (this.props.suggestedSubject) {
@@ -422,11 +455,7 @@ class ComposeScreen extends Component {
       this.setState({ message: ` > ${this.props.suggestedBody} \n \n` });
     }
 
-    if (this.props.suggestedRecipient) {
-      this.setState({ messageRecipient: this.props.suggestedRecipient });
-    }
-
-    const extensions = await web3Enable("YibanChen");
+    await web3Enable("YibanChen");
 
     if (!!localStorage.getItem("currentAccount")) {
       this.setState({
@@ -447,14 +476,18 @@ class ComposeScreen extends Component {
   };
 
   render() {
+    if (!!!localStorage.getItem("currentAccount")) {
+      console.log("REDIRECTING TO ABOUT");
+      return <Redirect to="/about"></Redirect>;
+    }
     if (this.state.error) {
       return (
-        <div>
+        <div className="text-center">
           <h1 className="centered">Error sending message</h1>
           <p className="centered">{this.state.errorMessage}</p>
           <Button
             variant="secondary"
-            className="btn-primary btn-lg m-2"
+            className="btn-primary btn-lg m-2 "
             onClick={this.goBack}
           >
             Back
@@ -462,105 +495,81 @@ class ComposeScreen extends Component {
         </div>
       );
     }
-    if (!!!localStorage.getItem("currentAccount")) {
-      return <Redirect to="/"></Redirect>;
-    }
-    if (this.state.loading) {
-      if (this.state.creating) {
-        return (
-          <div className="centered m-4">
-            <Loader type="Puff" color="#02C3FC" height={100} width={100} />
-            <h2> Sending message... </h2>
-          </div>
-        );
-      } else {
-        return (
-          <div className="centered m-4">
-            <Loader type="Puff" color="#02C3FC" height={100} width={100} />
-            <h2> Sending message... </h2>
-          </div>
-        );
-      }
-    }
+
     if (this.state.messageSent) {
       return (
         <div className="centered m-4">
-          <h2>Your message was sent!</h2>
+          <h2 id="sent-confirmation">Your message was sent!</h2>
+          <Button variant="secondary" className="mt-4 btn-md" href="/inbox">
+            <div className="back-button-container">
+              <FontAwesomeIcon icon={faAngleLeft} className="mr-1 back-caret" />
+              <h5>{"\t"}Back to Inbox</h5>
+            </div>
+          </Button>
         </div>
       );
     } else {
       return (
         <div>
-          <Modal
-            style={customStyles}
-            isOpen={this.state.accountSelectionModalIsOpen}
-            onRequestClose={this.closeAccountSelectionModal}
-            shouldCloseOnOverlayClick={false}
-          >
-            <h2>Please select the account you wish to use</h2>
-            <ul className="accountListContainer">
-              {this.state.accounts.map(function (acc, idx) {
-                return (
-                  <AccountItem
-                    action={this.handler}
-                    key={idx}
-                    account={acc}
-                  ></AccountItem>
-                );
-              }, this)}
-            </ul>
-          </Modal>
-          <Modal
-            isOpen={this.state.modalIsOpen}
-            onRequestClose={this.closeModal}
-            style={customStyles}
-            contentLabel="Example Modal"
-            sho
-            uldCloseOnOverlayClick={false}
-          >
-            <h2>
-              The Polkadot.js browser extension is required to create notes.
-            </h2>
-            <p>
-              You can download it{" "}
-              <a
-                target="_blank"
-                rel="noopener noreferrer"
-                href="https://polkadot.js.org/extension/"
-              >
-                here
-              </a>
-            </p>
-            <p>
-              After downloading and signing into the extension, please reload
-              this page.
-            </p>
-          </Modal>
           <div className="centered">
-            <h4 className="m-4">Compose a Message</h4>
+            {this.state.loading ? (
+              this.state.creating ? (
+                <div className="centered m-4">
+                  <YibanLoader
+                    type="Puff"
+                    color="#02C3FC"
+                    height={100}
+                    width={100}
+                  />
+                  <h2> Connecting to the Blockchain... </h2>
+                  <ProgressBar
+                    id="inboxProgress"
+                    animated
+                    now={this.state.percentCompleted}
+                  />
+                </div>
+              ) : (
+                <div className="centered m-4">
+                  <YibanLoader
+                    type="Puff"
+                    color="#02C3FC"
+                    height={100}
+                    width={100}
+                  />
+                  <h2> Sending message... </h2>
+                </div>
+              )
+            ) : (
+              <h4 className="m-4">Compose a Message</h4>
+            )}
             <div className="form-group form-inline">
               <label style={{ marginRight: "52.5px", fontSize: "1.25em" }}>
                 To:
               </label>
-              <TextareaAutosize
-                className="recipientInput"
+              <input
+                className="smallInput"
+                id="to-field"
                 onChange={(e) =>
                   this.setState({ messageRecipient: e.target.value })
                 }
-                defaultValue={this.state.messageRecipient}
-                rows={1}
-                cols={52}
+                defaultValue={
+                  this.props.suggestedRecipient
+                    ? this.props.suggestedRecipient
+                    : ""
+                }
                 maxLength="50"
                 spellCheck="false"
-                placeholder="Recipient Address"
-              ></TextareaAutosize>
+                value={this.state.messageRecipient}
+                placeholder="Recipient Wallet Address"
+              ></input>
             </div>
             <div className="form-group form-inline">
               <label style={{ marginRight: "5px", fontSize: "1.25em" }}>
                 Subject:
               </label>
-              <TextareaAutosize
-                className="subjectInput"
+              <input
+                className="smallInput"
+                id="subject-field"
                 onChange={(e) =>
                   this.setState({ messageSubject: e.target.value })
                 }
@@ -569,13 +578,14 @@ class ComposeScreen extends Component {
                 cols={52}
                 maxLength={65}
                 spellCheck="false"
-              ></TextareaAutosize>
+              ></input>
             </div>
             <div className="form-group form-inline scroll-flow">
               <TextareaAutosize
                 ref={this.textAreaRef}
-                onResize={(e) => { }}
-                className="messageInput"
+                id="body-field"
+                onResize={(e) => {}}
+                className="bigInput"
                 rows={12}
                 maxRows={15}
                 cols={110}
@@ -588,6 +598,7 @@ class ComposeScreen extends Component {
               action={this.sendMessage}
               buttonSize="lg"
               buttonText="Send"
+              buttonId="send-button"
             ></SimpleButton>
           </div>
         </div>

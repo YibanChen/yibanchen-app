@@ -1,5 +1,6 @@
 import { React, Component } from "react";
 import Button from "react-bootstrap/Button";
+
 class SimpleButton extends Component {
   render() {
     return (
@@ -7,7 +8,7 @@ class SimpleButton extends Component {
         <style type="text/css">
           {`
       .btn-flat {
-        background-color: #11566F;
+        background-color: #69ab43;
         color: #eeeeee;
       }
 
@@ -18,6 +19,7 @@ class SimpleButton extends Component {
           variant="flat"
           size={this.props.buttonSize}
           onClick={this.props.action}
+          id={this.props.buttonId}
         >
           {this.props.buttonText}
         </Button>
