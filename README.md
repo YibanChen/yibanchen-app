@@ -3,6 +3,9 @@ This project was bootstrapped with [Create React App](https://github.com/faceboo
 
 [![npm-tests](https://github.com/YibanChen/yibanchen-app/actions/workflows/npm-test.yml/badge.svg)](https://github.com/YibanChen/yibanchen-app/actions/workflows/npm-test.yml)
 
+# Backend API
+The React front end utilizes a backend API [yc-api](https://github.com/YibanChen/yc-api) service to provide the IPFS hosting. You will need to install this service for local testing of the UI.
+
 ## Available Scripts
 
 In the project directory, you can run:
@@ -29,3 +32,5 @@ The build is minified and the filenames include the hashes.\
 Your app is ready to be deployed!
 
 See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+
+
