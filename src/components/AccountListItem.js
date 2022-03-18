@@ -5,7 +5,7 @@ class AccountListItem extends Component {
   render() {
     return (
       <li className="m-2" key={this.props.account.address.toString()}>
-        <div className="m-4">
+        <div className="m-4 white-text">
           <Identicon
             className="my-class"
             value={this.props.account.address}

@@ -1,136 +1,221 @@
 import React from "react";
-import Loader from "react-loader-spinner";
-import { configure, shallow } from "enzyme";
+
+import { configure, shallow, mount, render } from "enzyme";
 import { expect } from "chai";
+import Adapter from "@wojtekmaj/enzyme-adapter-react-17";
+
 import Notes from "../pages/Notes";
 import Settings from "../pages/Settings";
-import Adapter from "enzyme-adapter-react-16";
-import AccountListItem from "../components/AccountListItem";
-import { setupServer } from "msw/node";
-import { rest } from "msw";
-import axios from "axios";
+import SiteMarketplace from "../pages/SiteMarketplace";
+import AllSites from "../pages/AllSites";
+import NotFound from "../pages/NotFound";
+import MySites from "../pages/MySites";
+import SiteUpload from "../pages/SiteUpload";
+
 import Identicon from "@polkadot/react-identicon";
-import { Dropdown } from "react-bootstrap";
+import { Dropdown, Container } from "react-bootstrap";
+import Loader from "react-loader-spinner";
+
+import NoteItem from "../components/NoteItem";
+import NoteDetails from "../components/NoteDetails";
+import SiteItem from "../components/SiteItem";
+import SiteItemNoSale from "../components/SiteItemNoSale";
 
 configure({
-  adapter: new Adapter(),
+    adapter: new Adapter(),
 });
+
+global.mount = mount;
+global.render = render;
+global.shallow = shallow;
+global.SVGElement = Array;
 
 let store = {};
 
 var mockLocalStorage = {
-  getItem: function (key) {
-    return store[key];
-  },
-  setItem: function (key, val) {
-    store[key] = val;
-  },
+    getItem: function (key) {
+        return store[key];
+    },
+    setItem: function (key, val) {
+        store[key] = val;
+    },
 };
 
-global.window = { localStorage: mockLocalStorage };
-global.localStorage = window.localStorage;
+global.localStorage = mockLocalStorage;
+// Some environments do not have the SVGElement constructor
 
-const server = setupServer(
-  rest.post("/login", (req, res, ctx) => {
-    console.log("hi");
-    // Respond with a mocked user token that gets persisted
-    // in the `sessionStorage` by the `Login` component.
-    return res(ctx.json({ token: "mocked_user_token" }));
-  }),
+let rootContainer;
 
-  rest.get("https://ipfs.io/ipfs(/*)", (req, res, ctx) => {
-    return res(
-      ctx.delay(1500),
-      ctx.status(202, "Mocked status"),
-      ctx.json({
-        data: {
-          message: "Mocked response JSON body",
-          timestamp: "2021-07-27T18:38:55.028Z",
-          sender: "5EFR4EEtvCA8EW3X87CZrUx1Sncr7tpVrJHjWmqRbarTkF61",
-          subject: "test subject",
-        },
-      })
+beforeEach(() => {
+    localStorage.setItem(
+        "currentAccount",
+        JSON.stringify({
+            address: "5FyNFTsWZ8mZpR83rED6gc1gQD85jKbsR7d4SV5aiNAPvMGH",
+            meta: { name: "wallet test" },
+        })
     );
-  })
-);
-
-beforeEach(async () => {
-  server.listen();
-  localStorage.setItem(
-    "currentAccount",
-    JSON.stringify({
-      address: "5FyNFTsWZ8mZpR83rED6gc1gQD85jKbsR7d4SV5aiNAPvMGH",
-      meta: { name: "max test" },
-    })
-  );
+    rootContainer = document.createElement("div");
+    document.body.appendChild(rootContainer);
 });
 
 afterEach(function () {
-  server.close();
+    document.body.removeChild(rootContainer);
+    rootContainer = null;
 });
 
-describe("Testing the inbox", function () {
-  it("Render properly before the IPFS call", async function () {
-    axios.defaults.adapter = require("axios/lib/adapters/http");
-    const wrapper = shallow(<Notes />);
-    expect(wrapper.find("parent")).to.have.length(0);
-    await new Promise((res) =>
-      setTimeout(() => {
-        res("");
-      }, 0)
-    );
-    wrapper.update();
-  });
+describe("Testing the inbox", async function () {
+    const wrapper = await shallow(<Notes />);
+    it("Render properly before the IPFS call", async function () {
+        expect(wrapper.find("parent")).to.have.length(0);
+        await new Promise((res) =>
+            setTimeout(() => {
+                res("");
+            }, 0)
+        );
+        wrapper.update();
+    });
 
-  it("Renders the loader", function (done) {
-    const wrapper = shallow(<Notes />);
-    // global.address = "5FyNFTsWZ8mZpR83rED6gc1gQD85jKbsR7d4SV5aiNAPvMGH";
-    const expectedLoader = (
-      <div className="centered m-4 p-1">
-        <Loader type="Puff" color="#02C3FC" height={200} width={200} />
-        <h1 className="m-4 robot">Loading Messages</h1>
-      </div>
-    );
-    const actualValue = wrapper.contains(expectedLoader);
-    expect(actualValue).to.equal(true);
-    done();
-  });
+    // TODO: this won't work in GH actions unless the Axios request to IPFS.io is mocked
+    /* it("should render the inbox with at least one note", async function () {
+      await wrapper.instance().componentDidMount();
+
+      const notes = wrapper.find(NoteItem);
+      expect(notes.length).to.be.above(1);
+    }); */
 });
 
-describe("Testing Account List Item component", function () {
-  it("should contain the expected props", function () {
-    // global.address = "5FyNFTsWZ8mZpR83rED6gc1gQD85jKbsR7d4SV5aiNAPvMGH";
-    const testAcc = {
-      address: "5FyNFTsWZ8mZpR83rED6gc1gQD85jKbsR7d4SV5aiNAPvMGH",
-      meta: { name: "max test" },
-    };
-    const wrapper = shallow(<AccountListItem account={testAcc} />);
+describe("Testing Site Marketplace", function () {
+    it("should render properly with expected elements and components", async function () {
+        const wrapper = await shallow(<SiteMarketplace />);
+        await wrapper.instance().componentDidMount();
 
-    expect(wrapper.props().children.props.children[0].props.value).to.equal(
-      "5FyNFTsWZ8mZpR83rED6gc1gQD85jKbsR7d4SV5aiNAPvMGH"
-    );
-    expect(wrapper.props().children.props.children[2]).to.equal("max test");
-  });
+        const container = wrapper.find(Container);
+        expect(container).to.have.length(1);
+
+        expect(wrapper.state('loading')).to.equal(false);
+
+    });
+});
+
+describe("Testing AllSites Page", function () {
+    it("should render properly with expected elements and components", async function () {
+        const wrapper = await shallow(<AllSites />);
+        await wrapper.instance().componentDidMount();
+
+        const container = wrapper.find(Container);
+        expect(container).to.have.length(1);
+    });
+});
+
+describe("Testing MySites Page", function () {
+    it("loads at least one site", async function () {
+        const wrapper = await shallow(<MySites />);
+        await wrapper.instance().componentDidMount();
+
+        expect(wrapper.state('sites').length).to.equal(0);
+    });
+});
+
+describe("Testing NotFound Page", function () {
+    it("should render properly", function () {
+        const wrapper = shallow(<NotFound />);
+
+        const headerText = wrapper.find("h1");
+        expect(headerText.text()).to.equal("Page not found!");
+    });
+});
+
+describe("Testing Upload Page", function () {
+    const wrapper = mount(<SiteUpload />);
+
+    it("should render a label and a file input field", () => {
+        expect(wrapper.find('input[type="file"]')).to.exist;
+        expect(wrapper.find("label")).to.exist;
+    });
+
+    it("should change the site name with input", () => {
+        const nameInput = wrapper.find("#name-input");
+
+        nameInput.simulate("change", {
+            target: { name: "siteName", value: "Max" },
+        });
+
+        expect(wrapper.state().siteName).to.equal("Max");
+    });
 });
 
 describe("Testing settings", function () {
-  it("should render properly with expected elements and values", function () {
-    const wrapper = shallow(<Settings />);
-    const testAcc = {
-      address: "5FyNFTsWZ8mZpR83rED6gc1gQD85jKbsR7d4SV5aiNAPvMGH",
-      meta: { name: "max test" },
-    };
-    console.log("button: ", wrapper.find("div"));
-    expect(wrapper.find("div")).to.have.length(4);
-    expect(wrapper.find("h3")).to.have.length(2);
-    expect(wrapper.find(Dropdown)).to.have.length(1);
-    expect(wrapper.find(Dropdown).find(Identicon)).to.have.length(1);
-    console.log(wrapper.find(Dropdown).find(Identicon).props());
-    expect(wrapper.find(Dropdown).find(Identicon).props().value).to.equal(
-      "5FyNFTsWZ8mZpR83rED6gc1gQD85jKbsR7d4SV5aiNAPvMGH"
-    );
-    expect(wrapper.find(Dropdown).find(Identicon).props().theme).to.equal(
-      "polkadot"
-    );
-  });
+    it("should render properly with expected elements and values", function () {
+        const wrapper = shallow(<Settings />);
+        const testAcc = {
+            address: "5FyNFTsWZ8mZpR83rED6gc1gQD85jKbsR7d4SV5aiNAPvMGH",
+            meta: { name: "wallet test" },
+        };
+
+        expect(wrapper.find("div")).to.have.length(10);
+        expect(wrapper.find("h3")).to.have.length(2);
+        expect(wrapper.find(Dropdown)).to.have.length(1);
+        expect(wrapper.find(Dropdown).find(Identicon).length).to.be.above(0);
+
+        expect(wrapper.find(Dropdown).find(Identicon).props().theme).to.equal(
+            "polkadot"
+        );
+    });
 });
+
+//Name service test
+const setUp = (props) => shallow(<Settings {...props} />);
+describe("Testing Name service", function () {
+    let component;
+    let instance;
+    beforeEach(() => {
+        component = setUp();
+    })
+    it("should render properly with expected elements", function () {
+        const wrapper = component.find(".name-service");
+        expect(wrapper).to.have.length(1);
+        expect(wrapper.find("div")).to.have.length(6);
+        expect(wrapper.find("input")).to.have.length(1);
+        expect(wrapper.find("button")).to.have.length(2);
+    })
+
+    describe("Input handler", function () {
+        it("should handle name input", function () {
+            const wrapper = component.find(".name-service");
+            wrapper.find("input").simulate('change', {
+                target: {
+                    value: 'testName'
+                }
+            })
+            expect(wrapper.find("input").prop("defaultValue")).to.equal(
+                ''
+            )
+        })
+        it("should set name click", function () {
+            const wrapper = component.find(".name-service");
+            wrapper.find(".btn_set").simulate('click');
+            expect(wrapper.find(".account-name-validate").text()).to.equal('This name is currently not available. Please choose another.');
+            expect(wrapper.find(".btn_set").text()).to.equal('Set Name');
+        })
+        it("should clear name click", function () {
+            const wrapper = component.find(".name-service");
+            wrapper.find(".btn-clear").simulate('click');
+            expect(wrapper.find(".btn-clear").text()).to.equal('Clear Name');
+        })
+
+
+    });
+
+});
+
+describe("Name value", function () {
+    it("should have no name value without message props", function () {
+        const wrapper = shallow(<NoteDetails />);
+        expect(wrapper.state().accountNameValue).to.equal("")
+    })
+
+
+});
+
+// const waitForAsync = () => new Promise((resolve) => setImmediate(resolve));
+

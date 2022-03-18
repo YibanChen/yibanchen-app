@@ -38,10 +38,6 @@ class About extends Component {
 
   closeAccountSelectionModal = () => {
     this.setState({ accountIsSelected: true });
-    console.log(
-      "global account: ",
-      JSON.parse(localStorage.getItem("currentAccount"))
-    );
   };
 
   componentDidMount = async () => {
@@ -81,8 +77,12 @@ class About extends Component {
   };
 
   render() {
+    console.log("Rendering about page");
     if (localStorage.getItem("currentAccount")) {
+      console.log("REDIRECTING TO INBOX");
       return <Redirect to="/inbox"></Redirect>;
+    } else {
+      console.log("NOT REDIRECTING");
     }
     return (
       <div className="centered m-3">
@@ -103,24 +103,32 @@ class About extends Component {
                 }}
               >
                 <Dropdown className="centered" variant="success">
-                  <Dropdown.Toggle variant="primary">
-                    Select Account
-                    <Identicon
-                      className="my-class"
-                      value={
-                        !!JSON.parse(localStorage.getItem("currentAccount"))
-                          ? JSON.parse(localStorage.getItem("currentAccount"))
-                              .address
-                          : ""
-                      }
-                      size={48}
-                      theme={"polkadot"}
-                    />{" "}
-                    {JSON.parse(localStorage.getItem("currentAccount"))
-                      ? JSON.parse(localStorage.getItem("currentAccount")).meta
-                          .name
-                      : ""}
-                  </Dropdown.Toggle>
+                  {this.state.accounts.length ? (
+                    <Dropdown.Toggle variant="primary">
+                      Select Account
+                      <Identicon
+                        className="my-class"
+                        value={
+                          !!JSON.parse(localStorage.getItem("currentAccount"))
+                            ? JSON.parse(localStorage.getItem("currentAccount"))
+                                .address
+                            : ""
+                        }
+                        size={48}
+                        theme={"polkadot"}
+                      />{" "}
+                      {JSON.parse(localStorage.getItem("currentAccount"))
+                        ? JSON.parse(localStorage.getItem("currentAccount"))
+                            .meta.name
+                        : ""}
+                    </Dropdown.Toggle>
+                  ) : (
+                    <h5 className="centered mr-5">
+                      It looks like you don't have any Polkadot accounts. Please
+                      create an account via the Polkadot extension and reload
+                      the page!
+                    </h5>
+                  )}
 
                   <Dropdown.Menu className="account-dropdown">
                     {this.state.accounts.map((account) => (
