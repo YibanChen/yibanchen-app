@@ -32,7 +32,7 @@
     "pe7-icon": "^1.0.4",
     "postcss": "^8.3.11",
     "postcss-loader": "^6.2.0",
-    "public-ip": "^4.0.4",
+    "public-ip": "^6.0.1",
     "react": "^17.0.2",
     "react-autosize-textarea": "^7.1.0",
     "react-bootstrap": "^1.6.3",
